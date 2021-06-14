@@ -1,0 +1,52 @@
+name: MAD Practical 6.0
+on:
+  push:
+    branches: [main, master]
+    
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout Source Codes
+        uses: actions/checkout@v2
+        
+      - name: Checkout Test Scripts
+        uses: actions/checkout@v2
+        with:
+          repository: lowkh/MAD_JunitPrac6
+          path: testDirectory
+      - name: Check files
+        run: |
+            ls
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.13.7'
+      
+      - name: Run Tests
+        run: |
+          UPATH=$(find . -path \*app/src/main/java/*/*.java | head -n 1 | sed 's_/[a-zA-Z0-9$]*[.]java__' | sed 's_./app/src/main/java/__' | sed 's_/_._g')
+          echo $UPATH
+          sed -i "" "s%sg.*[;]%$UPATH;%" testDirectory/*.java
+          head -1 testDirectory/*.java
+          cd testDirectory
+          ls
+          go run arrange.go
+          cd ..
+          #cd  app/src/androidTest/java/sg/edu/np/mad/madpractical/
+          #ls
+          
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+      
+      - name: build gradlew
+        run: ./gradlew build
+
+      - name: run tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          ndk: 21.0.6113669
+          cmake: 3.10.2.4988404
+          script: ./gradlew connectedAndroidTest 
